@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Mock DB - sẽ thay bằng Supabase ở Phase 2
-const DOCUMENT_MAPPINGS: Record<string, { url: string; title: string; description: string }> = {
-  "proposal-abc123": {
-    url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-    title: "📄 Proposal & Báo Giá Dịch Vụ - 2.4MB",
-    description: "Tài liệu đề xuất dịch vụ. Nhấn vào để xem chi tiết proposal.",
-  },
-};
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const OPENCLAW_WEBHOOK_URL = process.env.OPENCLAW_WEBHOOK_URL || "";
 
-const OPENCLAW_WEBHOOK_URL = process.env.OPENCLAW_WEBHOOK_URL || "https://hook.us1.make.com/xxxx";
-
-// Document ID chỉ cho phép alphanumeric, dấu gạch ngang, gạch dưới
 const VALID_ID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function escapeHtml(str: string): string {
@@ -21,6 +13,64 @@ function escapeHtml(str: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+interface Document {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  og_image: string;
+  is_active: boolean;
+}
+
+async function getDocument(id: string): Promise<Document | null> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/documents?id=eq.${encodeURIComponent(id)}&is_active=eq.true&select=*`,
+    {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      next: { revalidate: 60 },
+    }
+  );
+
+  if (!res.ok) return null;
+  const rows: Document[] = await res.json();
+  return rows[0] ?? null;
+}
+
+function logOpen(documentId: string, ip: string, userAgent: string) {
+  // Insert vào document_opens (async, không block)
+  fetch(`${SUPABASE_URL}/rest/v1/document_opens`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      document_id: documentId,
+      ip_address: ip,
+      user_agent: userAgent,
+    }),
+  }).catch(err => console.error("DB log error:", err));
+
+  // Webhook OpenClaw (async, không block)
+  if (OPENCLAW_WEBHOOK_URL) {
+    fetch(OPENCLAW_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "document_opened",
+        document_id: documentId,
+        ip_address: ip,
+        user_agent: userAgent,
+        timestamp: new Date().toISOString(),
+      }),
+    }).catch(err => console.error("Webhook error:", err));
+  }
 }
 
 export async function GET(
@@ -33,7 +83,7 @@ export async function GET(
     return NextResponse.json({ error: "Invalid document ID" }, { status: 400 });
   }
 
-  const doc = DOCUMENT_MAPPINGS[id];
+  const doc = await getDocument(id);
 
   if (!doc) {
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
@@ -47,6 +97,7 @@ export async function GET(
   if (isBot) {
     const safeTitle = escapeHtml(doc.title);
     const safeDescription = escapeHtml(doc.description);
+    const safeImage = escapeHtml(doc.og_image);
 
     const html = `<!DOCTYPE html>
 <html lang="vi">
@@ -57,7 +108,7 @@ export async function GET(
     <meta property="og:title" content="${safeTitle}">
     <meta property="og:description" content="${safeDescription}">
     <meta property="og:type" content="article">
-    <meta property="og:image" content="https://tikme.vn/preview.jpg">
+    <meta property="og:image" content="${safeImage}">
     <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
@@ -70,22 +121,8 @@ export async function GET(
     });
   }
 
-  // Real user: webhook async rồi redirect
-  try {
-    fetch(OPENCLAW_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event: "document_opened",
-        document_id: id,
-        ip_address: ip,
-        user_agent: userAgent,
-        timestamp: new Date().toISOString(),
-      }),
-    }).catch(err => console.error("Webhook error:", err));
-  } catch (error) {
-    console.error("Failed to trigger webhook", error);
-  }
+  // Real user: log + webhook async, redirect ngay
+  logOpen(id, ip, userAgent);
 
   return NextResponse.redirect(doc.url, 302);
 }
