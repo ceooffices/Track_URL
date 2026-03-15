@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDocument, getOpens } from "@/lib/supabase";
 import { notFound } from "next/navigation";
+import CopyButton from "@/app/components/copy-button";
 
 export const dynamic = "force-dynamic";
 
@@ -11,18 +12,18 @@ function parseDevice(ua: string): string {
   if (/Mac/i.test(ua)) return "Mac";
   if (/Windows/i.test(ua)) return "Windows";
   if (/curl/i.test(ua)) return "curl";
-  return "Other";
+  return "Khác";
 }
 
 function timeAgo(date: string): string {
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "vua xong";
-  if (mins < 60) return `${mins} phut truoc`;
+  if (mins < 1) return "vừa xong";
+  if (mins < 60) return `${mins} phút trước`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} gio truoc`;
+  if (hours < 24) return `${hours} giờ trước`;
   const days = Math.floor(hours / 24);
-  return `${days} ngay truoc`;
+  return `${days} ngày trước`;
 }
 
 export default async function AnalyticsPage({
@@ -35,7 +36,10 @@ export default async function AnalyticsPage({
 
   if (!doc) notFound();
 
-  const trackingUrl = `${process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : ""}/docs/${doc.id}`;
+  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "";
+  const trackingUrl = `${baseUrl}/docs/${doc.id}`;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -57,37 +61,40 @@ export default async function AnalyticsPage({
         {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="text-sm text-zinc-500">Tong luot mo</p>
+            <p className="text-sm text-zinc-500">Tổng lượt mở</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
               {opens.length}
             </p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="text-sm text-zinc-500">IP duy nhat</p>
+            <p className="text-sm text-zinc-500">IP duy nhất</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
               {new Set(opens.map((o) => o.ip_address)).size}
             </p>
           </div>
-          <div className="col-span-2 rounded-xl border border-zinc-200 bg-white p-5 sm:col-span-1 dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="text-sm text-zinc-500">Tracking link</p>
-            <p className="mt-1 truncate text-sm font-mono text-zinc-900 dark:text-white">
-              {trackingUrl}
-            </p>
+          <div className="col-span-2 flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-5 sm:col-span-1 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-zinc-500">Tracking link</p>
+              <p className="mt-1 truncate font-mono text-sm text-zinc-900 dark:text-white">
+                {trackingUrl}
+              </p>
+            </div>
+            <CopyButton text={trackingUrl} />
           </div>
         </div>
 
         {/* Opens table */}
-        <h2 className="mb-4 text-lg font-semibold">Lich su mo</h2>
+        <h2 className="mb-4 text-lg font-semibold">Lịch sử mở</h2>
         {opens.length === 0 ? (
-          <p className="text-zinc-500">Chua co ai mo document nay.</p>
+          <p className="text-zinc-500">Chưa có ai mở document này.</p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
             <table className="w-full text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium">Thoi gian</th>
+                  <th className="px-4 py-3 text-left font-medium">Thời gian</th>
                   <th className="px-4 py-3 text-left font-medium">IP</th>
-                  <th className="px-4 py-3 text-left font-medium">Thiet bi</th>
+                  <th className="px-4 py-3 text-left font-medium">Thiết bị</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-800 dark:bg-zinc-950">

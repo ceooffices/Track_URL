@@ -23,7 +23,7 @@ export default function NewDocument() {
     };
 
     if (!data.id || !data.title || !data.url) {
-      setError("Vui long dien day du ID, tieu de va URL.");
+      setError("Vui lòng điền đầy đủ ID, tiêu đề và URL.");
       setLoading(false);
       return;
     }
@@ -37,12 +37,12 @@ export default function NewDocument() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Loi tao document");
+        throw new Error(err.error || "Lỗi tạo document");
       }
 
-      router.push("/");
+      router.push(`/analytics/${data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Co loi xay ra");
+      setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }
@@ -53,9 +53,9 @@ export default function NewDocument() {
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-4">
           <Link href="/" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
-            &larr; Quay lai
+            &larr; Quay lại
           </Link>
-          <h1 className="text-xl font-bold tracking-tight">Tao Tracking Link</h1>
+          <h1 className="text-xl font-bold tracking-tight">Tạo Tracking Link</h1>
         </div>
       </header>
 
@@ -71,24 +71,24 @@ export default function NewDocument() {
               type="text"
               placeholder="vd: proposal-abc123"
               pattern="[a-zA-Z0-9_\-]{1,128}"
-              title="Chi cho phep a-z, 0-9, gach ngang, gach duoi"
+              title="Chỉ cho phép a-z, 0-9, gạch ngang, gạch dưới"
               className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-white"
               required
             />
             <p className="mt-1 text-xs text-zinc-500">
-              Se tao link: /docs/[id]
+              Sẽ tạo link: /docs/[id]
             </p>
           </div>
 
           <div>
             <label htmlFor="title" className="mb-1 block text-sm font-medium">
-              Tieu de
+              Tiêu đề
             </label>
             <input
               id="title"
               name="title"
               type="text"
-              placeholder="vd: Proposal & Bao Gia Dich Vu"
+              placeholder="vd: Proposal & Báo Giá Dịch Vụ"
               className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-white"
               required
             />
@@ -96,20 +96,20 @@ export default function NewDocument() {
 
           <div>
             <label htmlFor="description" className="mb-1 block text-sm font-medium">
-              Mo ta (hien thi khi share qua Zalo/Telegram)
+              Mô tả (hiển thị khi share qua Zalo/Telegram)
             </label>
             <textarea
               id="description"
               name="description"
               rows={2}
-              placeholder="vd: Tai lieu de xuat dich vu. Nhan vao de xem chi tiet."
+              placeholder="vd: Tài liệu đề xuất dịch vụ. Nhấn vào để xem chi tiết."
               className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-white"
             />
           </div>
 
           <div>
             <label htmlFor="url" className="mb-1 block text-sm font-medium">
-              URL file PDF goc
+              URL file PDF gốc
             </label>
             <input
               id="url"
@@ -132,7 +132,7 @@ export default function NewDocument() {
             disabled={loading}
             className="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
-            {loading ? "Dang tao..." : "Tao Tracking Link"}
+            {loading ? "Đang tạo..." : "Tạo Tracking Link"}
           </button>
         </form>
       </main>

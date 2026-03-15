@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Track URL - Document Tracking",
-  description: "Theo doi link tai lieu, proposal. Biet ai mo, khi nao, tu dau.",
+  title: "Track URL - Theo dõi tài liệu",
+  description: "Theo dõi link tài liệu, proposal. Biết ai mở, khi nào, từ đâu.",
 };
 
 export default function RootLayout({
