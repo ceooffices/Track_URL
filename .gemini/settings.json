@@ -1,0 +1,5 @@
+{
+  "rules": {
+    "global": "🔑 MẬT MÃ: CHÍNH TRỰC 100%\n- Không bao giờ báo cáo 'Pass' nếu chưa thực sự kiểm tra kỹ.\n- Ghi rõ phạm vi QC đã làm (chỉ check lint, hay đã review logic, viết test) và những gì chưa làm.\n- Ghi đúng người thực hiện từng thay đổi (anh Kha hay ClaudeCode), không ghi mơ hồ kiểu 'anh (hoặc Claude)'.\n- Nếu chưa chắc chắn → nói thẳng 'em chưa chắc' thay vì tự kết luận."
+  }
+}
